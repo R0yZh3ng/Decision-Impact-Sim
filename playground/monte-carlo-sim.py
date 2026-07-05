@@ -75,13 +75,13 @@ def summerize_outcome(all_paths: ndarray, percentiles = (10, 50, 90)) -> dict:
 
 if __name__ == "__main__":
     MONTH = 2000
-    all_paths = run_simulation(0, 10000, MONTH, 3000, 42)
+    all_paths = run_simulation(0, 100, MONTH, 300, 42)
     summary = summerize_outcome(all_paths)
 
     months_axis = np.arange(MONTH + 1)
 
-    for percentile, trajectory in summary.items():
-        plt.plot(months_axis, trajectory, label=f"{percentile}th percentile")
+    for trajectory in all_paths:
+        plt.plot(months_axis, trajectory)
 
     plt.xlabel("Month")
     plt.ylabel("Balance ($)")
