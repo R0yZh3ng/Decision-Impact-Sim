@@ -7,14 +7,14 @@ const API_BASE = "http://localhost:8000";
 export async function runSimulation( //declares a function taht can perform asynchronus operatiosn liek network requests without freezing everything esle whiel it waits, async lets you use await inside the funciton body
   req: SimulationRequest
 ): Promise<SimulationResponse> { // promise is jsut that it promises it will eventually return that shape
-  const response = await fetch('${API_BASE}/simulate', {
+  const response = await fetch(`${API_BASE}/simulations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
 
   if (!response.ok) {
-    throw new Error('API error: ${reponse.status}');
+    throw new Error(`API error: ${reponse.status}`);
   }
 
   return response.json();

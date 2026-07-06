@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import numpy as np
+
 import monte_carlo_sim
 
 app = FastAPI()
@@ -38,4 +40,12 @@ class SimulationRequest(BaseModel):
 def simulate(req: SimulationRequest):
     paths = monte_carlo_sim.run_simulation(req.initial_balance, req.monthly_contribution, req.months, req.n_simulations, req.seed)
     summary = monte_carlo_sim.summerize_outcome(paths)
-    return {str(p): arr.tolist() for p, arr in summary.items()}
+
+    n_sample_paths = min(30, paths.shape[0])
+    sample_indices = np.random.choice(paths.shape[0], size = n_sample_paths, replace= False)
+    sample_paths = paths[sample_indices]
+
+    return {
+            "summary": {str(p): arr.tolist() for p, arr in summary.items()},
+            "sample_paths":sample_paths.tolist(),
+    }

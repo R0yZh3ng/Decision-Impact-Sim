@@ -7,15 +7,14 @@ from pathlib import Path
 import os
 import csv
 
-tickers = ["SPY"]
+tickers = ["RGTI"]
 script_dir = Path(__file__).parent
-file_path = script_dir / "data-prac" / "spy.csv"
+file_path = script_dir / "data-prac" / "RGTI.csv"
 file_path.parent.mkdir(parents = True, exist_ok = True)
 
 if os.path.exists(file_path):
     print("reading csv")
     df = pd.read_csv(file_path)
-
 else:
     print("downloading data from yfinance")
     df = yf.download(tickers, period = "25y", auto_adjust = True)["Close"]
@@ -24,7 +23,7 @@ else:
 
 
 
-log_returns = np.log(df/df.shift(1))
+log_returns = np.log(df/df.shift(1)).dropna()
 mean_returns = log_returns.mean()
 cov_matrix = log_returns.cov()
 
@@ -94,7 +93,6 @@ if __name__ == "__main__":
     MONTH = 2000
     all_paths = run_simulation(0, 100, MONTH, 300, 42)
     summary = summerize_outcome(all_paths)
-
     months_axis = np.arange(MONTH + 1)
 
     for trajectory in all_paths:

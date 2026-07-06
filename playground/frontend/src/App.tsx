@@ -1,122 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react"; // use state is a hook, a react function taht lets a component remeber a value across renders, hooks always start with use by convention to show that this fucntion has special rules
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from "recharts";
+import { runSimulation } from "./api";
+import type { SimulationResponse } from "./types";
 
-function App() {
-  const [count, setCount] = useState(0)
+function App () { // just a normal javascript funciton, react treats any funciton that returns jsx and starts witha capital letters a component
+  const [result, setResult] = useState<SimulationResponse | null > (null); // useState returns an array of the current value and a function to update it, running the funciton updates the value and tells react to re render
+  const [loading, setLoading] = useState(false);
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  const handleRun = async () => { // short hand arrow function
+    setLoading(true);
+    try {
+      const data = await runSimulation({
+        initial_balance: 2000,
+        monthly_contribution: 2000,
+        months: 120,
+        n_simulations: 5000,
+      });
+      setResult(data);
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      <div className="ticks"></div>
+const chartData = result
+ ? result.summary["50"].map((_, i) => {
+    const point: Record<string, number> = {
+      month: i, 
+      p10: result.summary["10"][i],
+      p50: result.summary["50"][i],
+      p90: result.summary["90"][i],
+    };
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+    result.sample_paths.forEach((path, pathIndex) => {
+      point[`sample_${pathIndex}`] = path[i]
+    });
+    
+    return point;
+  })
+: [];
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+
+return (
+    <div style={{ padding: 40 }}>
+      <h1>Decision Impact Simulator</h1>
+      <button onClick={handleRun} disabled={loading}>
+        {loading ? "Running..." : "Run Simulation"}
+      </button>
+
+      {chartData.length > 0 && (
+        <LineChart width={700} height={400} data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="month" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          
+          {result!.sample_paths.map((_, pathIndex) => (
+            <Line
+              key={pathIndex}
+              type="monotone"
+              dataKey={`sample_${pathIndex}`}
+              stroke="#cccccc"
+              strokeWidth={1}
+              dot={false}
+              legendType="none"
+              isAnimationActive={false}
+            />
+          ))}
+
+          <Line type="monotone" dataKey="p10" stroke="#ff7f7f" name="10th percentile" dot={false} />
+          <Line type="monotone" dataKey="p50" stroke="#4a90d9" name="Median" dot={false} />
+          <Line type="monotone" dataKey="p90" stroke="#7fbf7f" name="90th percentile" dot={false} />
+        </LineChart>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
