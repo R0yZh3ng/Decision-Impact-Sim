@@ -10,7 +10,7 @@ import csv
 tickers = ["SPY"]
 script_dir = Path(__file__).parent
 file_path = script_dir / "data-prac" / "spy.csv"
-file_path.parent.mkdir(parents = True, exists_ok = True)
+file_path.parent.mkdir(parents = True, exist_ok = True)
 
 if os.path.exists(file_path):
     print("reading csv")

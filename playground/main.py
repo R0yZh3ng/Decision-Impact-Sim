@@ -1,13 +1,32 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+import monte_carlo_sim
+
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"hello, world"}
+class SimulationRequest(BaseModel):
+    initial_balance: float
+    monthly_contribution: float
+    months: int
+    n_simulations: int
+    seed: int | None = 42
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
+#@app.get("/")
+#def read_root():
+#    return {"hello, world"}
+#
+#@app.get("/items/{item_id}")
+#def read_item(item_id: int, q: str | None = None):
+#    return {"item_id": item_id, "q": q}
+#
+#@app.put("/items/{item_id}")
+#def update_item(item_id: int, item: Item):
+#    return {"item_balance": item.initial_balance, "item_id": item_id}
+#
 
+@app.post("/simulations")
+def simulate(req: SimulationRequest):
+    paths = monte_carlo_sim.run_simulation(req.initial_balance, req.monthly_contribution, req.months, req.n_simulations, req.seed)
+    summary = monte_carlo_sim.summerize_outcome(paths)
+    return {str(p): arr.tolist() for p, arr in summary.items()}
