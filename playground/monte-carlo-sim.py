@@ -1,16 +1,33 @@
 import numpy as np
+import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+import os
+import csv
 
 tickers = ["SPY"]
+script_dir = Path(__file__).parent
+file_path = script_dir / "data-prac" / "spy.csv"
+file_path.parent.mkdir(parents = True, exists_ok = True)
 
-df = yf.download(tickers, period = "25y", auto_adjust = True)["Close"]
+if os.path.exists(file_path):
+    print("reading csv")
+    df = pd.read_csv(file_path)
+
+else:
+    print("downloading data from yfinance")
+    df = yf.download(tickers, period = "25y", auto_adjust = True)["Close"]
+    df.to_csv(file_path, index=False)
+
+
+
 
 log_returns = np.log(df/df.shift(1))
 mean_returns = log_returns.mean()
 cov_matrix = log_returns.cov()
 
-print(f" Dataframe: {df} | log returns: {log_returns} | mean returns: {mean_returns} | cov matrix: {cov_matrix}")
 
 def sample_annual_returns(rng: np.random.Generator) -> float:
     """
@@ -86,5 +103,4 @@ if __name__ == "__main__":
     plt.xlabel("Month")
     plt.ylabel("Balance ($)")
     plt.title("Monte Carlo Projection")
-    plt.legend()
     plt.savefig("monte_carlo.png")
